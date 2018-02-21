@@ -188,3 +188,5 @@ Davis %>% ggplot(aes(x=BMIcat, fill=sex)) +
 
 ```
 
+Note: This homework can be found in [this online GitHub repository](https://github.com/mpwetzel1/N741Homework2).
+

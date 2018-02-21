@@ -1,15 +1,17 @@
 ---
 title: "Homework 2"
-author: "Vicki Hertzberg and Melinda Higgins"
-date: "2/14/2018"
+author: "Martha Wetzel"
+date: "2/21/2018"
 output:
-  pdf_document: default
-  word_document: default
   html_document: default
+  word_document: default
+  pdf_document: default
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(warning = FALSE)
+knitr::opts_chunk$set(message = FALSE)
 ```
 
 # *Due Date* is 21 February 2018
@@ -42,20 +44,61 @@ The `Davis` dataset in the `car` package contains data on the measured and repor
 Use tools within the `dplyr` package as much as possible to answer the following questions.
 
 ##### **Question 1:** What kind of R object is the `Davis` dataset?
+```{R}
+library(car)
+library(quantreg)
+library(dplyr)
+library(ggplot2)
+library(janitor)
+data(Davis)
+ls()
+
+```
+
+The Davis data set is a `r class(Davis) ` object
 
 ##### **Question 2:** How many observations are in the `Davis` dataset?
 
+```{R}
+str(Davis)
+
+Davis %>%
+  summarise(nObs = n())
+```
+
+There are 200 observations in the Davis data set.
+
+
 ##### **Question 3:** For reported weight, how many observations have a missing value?
+```{r complete}
+completeObs <- complete.cases(Davis$weight)
+
+```
+**There are `r sum(completeObs == FALSE) ` missing weight values.**
 
 ##### **Question 4:** How many observations have no missing values? _(HINT: find complete cases)_
 
 ---
 
-Create a subset containing only females.
+```{r}
+CompleteRecs <- complete.cases(Davis)
+
+```
+
+**There are `r sum(CompleteRecs) ` complete records.**
+
 
 ##### **Question 5:** How many females are in this subset?
+Create a subset containing only females.
 
 ---
+```{R}
+Females <- Davis %>%
+  filter(sex == "F")
+
+```
+
+**There are `r Females %>% summarise(nObs = n())` females in the Davis data.**
 
 That last question was an opportunity for you to show-off your `dplyr` confidence. 
 
@@ -76,13 +119,38 @@ We calculate the BMI as the **ratio of the weight in kilograms divided by the sq
 
 Create the BMI variable and then a variable to depict BMI category. Note that the `height` variable is in centimeters, and `weight` is in kg. You need to create the BMI variable using the correct formula. 
 
+```{R}
+heightm <- Davis$height/100
+BMI <- Davis$weight/(heightm^2)
+
+Davis <- Davis %>%
+  mutate(BMIcat = 
+    if_else(BMI < 18.5, "1. Underweight",
+                                         if_else( BMI<25, "2. Normal",
+                                                                    if_else(BMI < 30, "3. Overweight", "4. Obese"))))
+  
+Davis$BMI_NoOutlier <-  BMI
+Davis$BMI_NoOutlier[BMI>300] <- NA
+
+```
+
 Now answer these questions:
 
 ##### **Question 6:** What is the average BMI for these individuals?
 
+**The average BMI for these individuals is `r round(mean(BMI, na.rm=TRUE), digits=2)`.   **
+However, this average includes a clearly incorrect extreme value. When this extreme value is removed, the mean is `r round(mean(Davis$BMI_NoOutlier, na.rm=TRUE),digits=2)`.
+
 ##### **Question 7:** How do these individuals fall into the BMI categories (what are the frequencies and relative %'s)?
 
 ----
+
+```{r}
+
+Davis %>%
+  janitor::tabyl(BMIcat)
+
+```
 
 ## Test your graphing skills using `ggplot2`
 
@@ -90,13 +158,33 @@ Using the `Davis` dataset from the `car` package, create the following graphics/
 
 ##### **Question 8:** Create a histogram of BMI. 
 
+```{r hist}
+hist(BMI)
+hist(Davis$BMI_NoOutlier)
+
+```
+
 _What do you notice about the distribution (any outliers or skewness)?_
+When the extreme outlier is removed, the distribution retains some right-skewness with an outlier, but it does appear to approximate normality.
 
 ##### **Question 9:** Create side-by-side boxplots of the BMI distributions by gender
 
 _Remember to remove any outliers if needed_
 
+```{R}
+ggplot(Davis, 
+       aes(x=sex, y=BMI_NoOutlier, fill=sex)) + 
+  geom_boxplot() 
+
+```
+
 ##### **Question 10:** Create a clustered bar chart of the BMI categories by gender
 
 _(note: the y-axis should be counts)_
+
+```{R}
+Davis %>% ggplot(aes(x=BMIcat, fill=sex)) +
+  geom_bar(position = "dodge") 
+
+```
 
